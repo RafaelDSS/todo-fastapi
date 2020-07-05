@@ -22,6 +22,15 @@ def list_tasks(db: Session = Depends(get_db)):
     return db.query(models.Todo).all()
 
 
+@app.get("/{task_id}", response_model=schemas.TodoList)
+def list_task(task_id: int, db: Session = Depends(get_db)):
+    todo = db.query(models.Todo).filter(models.Todo.id == task_id).first()
+
+    if not todo:
+        raise HTTPException(status_code=404, detail="The id does not exist")
+    return todo
+
+
 @app.post("/")
 def create_task(task: schemas.TodoCreate, db: Session = Depends(get_db)):
     todo = models.Todo(**task.dict())
@@ -47,6 +56,7 @@ def edit_task(task_id: int, task: schemas.TodoCreate, db: Session = Depends(get_
         .filter(models.Todo.id == task_id)
         .update(values=task.dict())
     )
+
     if not todo:
         raise HTTPException(status_code=404, detail="The id does not exist")
     db.commit()
