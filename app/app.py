@@ -1,6 +1,6 @@
+from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 from . import models, schemas
 from .database import SessionLocal, engine
 
@@ -17,12 +17,12 @@ def get_db():
         db.close()
 
 
-@app.get("/list", response_model=List[schemas.TodoList])
+@app.get("/", response_model=List[schemas.TodoList])
 def list_tasks(db: Session = Depends(get_db)):
     return db.query(models.Todo).all()
 
 
-@app.post("/create")
+@app.post("/")
 def create_task(task: schemas.TodoCreate, db: Session = Depends(get_db)):
     todo = models.Todo(**task.dict())
     db.add(todo)
@@ -30,17 +30,17 @@ def create_task(task: schemas.TodoCreate, db: Session = Depends(get_db)):
     return {"sucess": True}
 
 
-@app.get("/delete/{task_id}")
+@app.delete("/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     todo = db.query(models.Todo).filter(models.Todo.id == task_id).delete()
 
     if not todo:
-        raise HTTPException(status_code=404, detail="Task does not exist")
+        raise HTTPException(status_code=404, detail="The id does not exist")
     db.commit()
     return {"sucess": True}
 
 
-@app.post("/edit/{task_id}")
+@app.put("/{task_id}")
 def edit_task(task_id: int, task: schemas.TodoCreate, db: Session = Depends(get_db)):
     todo = (
         db.query(models.Todo)
@@ -48,6 +48,6 @@ def edit_task(task_id: int, task: schemas.TodoCreate, db: Session = Depends(get_
         .update(values=task.dict())
     )
     if not todo:
-        raise HTTPException(status_code=404, detail="Task does not exist")
+        raise HTTPException(status_code=404, detail="The id does not exist")
     db.commit()
     return {"sucess": True}
