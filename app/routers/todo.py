@@ -1,12 +1,13 @@
+from fastapi import APIRouter
 from typing import List
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from . import models, schemas
-from .database import SessionLocal, engine
+from app import models, schemas
+from app.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+router = APIRouter()
 
 
 def get_db():
@@ -17,12 +18,12 @@ def get_db():
         db.close()
 
 
-@app.get("/", response_model=List[schemas.TodoList])
+@router.get("/", response_model=List[schemas.TodoList])
 def list_tasks(db: Session = Depends(get_db)):
     return db.query(models.Todo).all()
 
 
-@app.get("/{task_id}", response_model=schemas.TodoList)
+@router.get("/{task_id}", response_model=schemas.TodoList)
 def list_task(task_id: int, db: Session = Depends(get_db)):
     todo = db.query(models.Todo).filter(models.Todo.id == task_id).first()
 
@@ -31,7 +32,7 @@ def list_task(task_id: int, db: Session = Depends(get_db)):
     return todo
 
 
-@app.post("/")
+@router.post("/")
 def create_task(task: schemas.TodoCreate, db: Session = Depends(get_db)):
     todo = models.Todo(**task.dict())
     db.add(todo)
@@ -39,7 +40,7 @@ def create_task(task: schemas.TodoCreate, db: Session = Depends(get_db)):
     return {"sucess": True}
 
 
-@app.delete("/{task_id}")
+@router.delete("/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     todo = db.query(models.Todo).filter(models.Todo.id == task_id).delete()
 
@@ -49,7 +50,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     return {"sucess": True}
 
 
-@app.put("/{task_id}")
+@router.put("/{task_id}")
 def edit_task(task_id: int, task: schemas.TodoCreate, db: Session = Depends(get_db)):
     todo = (
         db.query(models.Todo)
